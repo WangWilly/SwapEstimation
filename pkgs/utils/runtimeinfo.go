@@ -18,7 +18,7 @@ type LogConfig struct {
 	Format  string `env:"LOG_FORMAT,default=json"`
 	DevMode bool   `env:"LOG_DEV_MODE,default=false"`
 
-	ProjectName string `env:"LOG_PROJECT_NAME,default=labs-hr-go"`
+	ProjectName string `env:"LOG_PROJECT_NAME,default=swap-estimation"`
 	ProjectID   string `env:"LOG_PROJECT_ID,default=0"`
 	ProjectEnv  string `env:"LOG_PROJECT_ENV,default=development"`
 	ProjectVer  string `env:"LOG_PROJECT_VER,default=0.0.1"`

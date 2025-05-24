@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

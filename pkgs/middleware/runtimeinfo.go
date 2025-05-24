@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/rs/xid"
 	"github.com/rs/zerolog"

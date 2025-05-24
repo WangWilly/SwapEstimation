@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/DATA-DOG/go-sqlmock"
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
 	"github.com/sethvargo/go-envconfig"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"

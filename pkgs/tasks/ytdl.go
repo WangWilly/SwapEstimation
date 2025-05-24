@@ -5,9 +5,9 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/cmd"
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
-	"github.com/WangWilly/labs-hr-go/pkgs/uuid"
+	"github.com/WangWilly/swap-estimation/pkgs/cmd"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/uuid"
 )
 
 ////////////////////////////////////////////////////////////////////////////////

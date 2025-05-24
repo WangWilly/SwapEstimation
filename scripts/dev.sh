@@ -1,9 +1,13 @@
 #/bin/bash
 
+# load the environment variables from .env file
+if [ -f .env ]; then
+  export $(cat .env | xargs)
+else
+  echo ".env file not found. Please create one with the necessary environment variables."
+  exit 1
+fi
 
-export DB_SEED=true
-export DB_IS_DEV=false
-export LOG_FORMAT=console
 # This script is used to run the dev server for the project.
 # It sets up the environment and starts the server.
 # Usage: ./scripts/dev.sh

@@ -16,9 +16,9 @@ import (
 type DbConfig struct {
 	Host     string `env:"DB_HOST,default=localhost"`
 	Port     string `env:"DB_PORT,default=3306"`
-	User     string `env:"DB_USER,default=labs-hr-go"`
-	Password string `env:"DB_PASSWORD,default=labs-hr-go"`
-	Database string `env:"DB_DATABASE,default=labs-hr-go"`
+	User     string `env:"DB_USER,default=swap-estimation"`
+	Password string `env:"DB_PASSWORD,default=swap-estimation"`
+	Database string `env:"DB_DATABASE,default=swap-estimation"`
 	Charset  string `env:"DB_CHARSET,default=utf8mb4"`
 	Driver   string `env:"DB_DRIVER,default=mysql"`
 	Timezone string `env:"DB_TIMEZONE,default=UTC"`

@@ -2,23 +2,18 @@ package main
 
 import (
 	"context"
+	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"github.com/WangWilly/labs-hr-go/controllers/attendance"
-	"github.com/WangWilly/labs-hr-go/controllers/employee"
-	"github.com/WangWilly/labs-hr-go/database/migrations"
-	"github.com/WangWilly/labs-hr-go/pkgs/cachemanager"
-	"github.com/WangWilly/labs-hr-go/pkgs/middleware"
-	"github.com/WangWilly/labs-hr-go/pkgs/repos/employeeattendancerepo"
-	"github.com/WangWilly/labs-hr-go/pkgs/repos/employeeinforepo"
-	"github.com/WangWilly/labs-hr-go/pkgs/repos/employeepositionrepo"
-	"github.com/WangWilly/labs-hr-go/pkgs/seed"
-	"github.com/WangWilly/labs-hr-go/pkgs/timemodule"
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/controllers/estimate"
+	"github.com/WangWilly/swap-estimation/pkgs/clients/eth"
+	"github.com/WangWilly/swap-estimation/pkgs/middleware"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
+	"github.com/ethereum/go-ethereum/ethclient"
 
 	"github.com/sethvargo/go-envconfig"
 )
@@ -30,13 +25,10 @@ type envConfig struct {
 	Port string `env:"PORT,default=8080"`
 	Host string `env:"HOST,default=0.0.0.0"`
 
-	// Database configuration
-	DbCfg     utils.DbConfig `env:",prefix="`
-	DbMigrate bool           `env:"DB_MIGRATE,default=true"`
-	DbSeed    bool           `env:"DB_SEED,default=false"`
+	// Eth client configuration
+	GethClientURL string `env:"GETH_CLIENT_URL,required"`
 
-	// Redis configuration
-	RedisCfg utils.RedisConfig `env:",prefix="`
+	EthClientCfg eth.Config `env:",prefix=ETH_CLIENT_"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -64,75 +56,23 @@ func main() {
 	r.Use(middleware.LoggingMiddleware())
 
 	////////////////////////////////////////////////////////////////////////////
-	// Setup database
-
-	db, err := utils.GetDB(cfg.DbCfg)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to connect to database")
-	}
-	sqlDB, err := db.DB()
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to get sqlDB from db")
-	}
-
-	if cfg.DbMigrate {
-		if err := migrations.Apply(db); err != nil {
-			logger.Fatal().Err(err).Msg("Failed to apply database migrations")
-		}
-		logger.Info().Msg("Database migrations applied successfully")
-	}
-
-	// Seed the database if DB_SEED is true
-	if cfg.DbSeed {
-		logger.Info().Msg("Seeding database with dummy data...")
-		if err := seed.SeedData(ctx, db); err != nil {
-			logger.Fatal().Err(err).Msg("Failed to seed database")
-		}
-		logger.Info().Msg("Database seeded successfully")
-	}
-
-	////////////////////////////////////////////////////////////////////////////
-	// Initialize Redis client
-
-	redisClient, err := utils.GetRedis(ctx, cfg.RedisCfg)
-	if err != nil {
-		logger.Fatal().Err(err).Msg("Failed to connect to Redis")
-	}
-	logger.Info().Msg("Redis client created successfully!")
-
-	////////////////////////////////////////////////////////////////////////////
 	// Initialize modules
 
-	timeModule := timemodule.New()
-	employeeInfoRepo := employeeinforepo.New()
-	employeePositionRepo := employeepositionrepo.New()
-	employeeAttendanceRepo := employeeattendancerepo.New()
-	cacheManager := cachemanager.New(redisClient)
+	gethClient, err := ethclient.Dial(cfg.GethClientURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
+	}
+	ethClient := eth.New(cfg.EthClientCfg, gethClient)
 
 	////////////////////////////////////////////////////////////////////////////
 	// Initialize the controllers
 
-	employeeCtrlCfg := employee.Config{}
-	employeeCtrl := employee.NewController(
-		employeeCtrlCfg,
-		db,
-		timeModule,
-		employeeInfoRepo,
-		employeePositionRepo,
-		cacheManager,
+	estimateCtrlCfg := estimate.Config{}
+	estimateCtrl := estimate.NewController(
+		estimateCtrlCfg,
+		ethClient,
 	)
-	employeeCtrl.RegisterRoutes(r)
-
-	attendanceCtrlCfg := attendance.Config{}
-	attendanceCtrl := attendance.NewController(
-		attendanceCtrlCfg,
-		db,
-		timeModule,
-		employeePositionRepo,
-		employeeAttendanceRepo,
-		cacheManager,
-	)
-	attendanceCtrl.RegisterRoutes(r)
+	estimateCtrl.RegisterRoutes(r)
 
 	////////////////////////////////////////////////////////////////////////////
 
@@ -164,18 +104,6 @@ func main() {
 	// Create a deadline to wait for
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-
-	// Shutdown the server gracefully
-	if err := redisClient.Close(); err != nil {
-		logger.Fatal().Err(err).Msg("Failed to close Redis client")
-	}
-	logger.Info().Msg("Redis client closed successfully!")
-
-	// Close the database connection
-	if err := sqlDB.Close(); err != nil {
-		logger.Fatal().Err(err).Msg("Failed to close database connection")
-	}
-	logger.Info().Msg("Database connection closed successfully!")
 
 	// Gracefully shutdown the server
 	logger.Info().Msg("Shutting down server...")

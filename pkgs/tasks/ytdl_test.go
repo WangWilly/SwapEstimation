@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
-	"github.com/WangWilly/labs-hr-go/pkgs/uuid"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/uuid"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.uber.org/mock/gomock"
 )

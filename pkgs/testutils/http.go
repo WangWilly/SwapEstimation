@@ -3,12 +3,14 @@ package testutils
 import (
 	"bytes"
 	"encoding/json"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
 	"github.com/gin-gonic/gin"
 	"github.com/smartystreets/goconvey/convey"
 )
@@ -42,11 +44,24 @@ func NewTestHttpServer(controller Controller) TestHttpServer {
 ////////////////////////////////////////////////////////////////////////////////
 
 func (c *TestHttpServer) GetURL(t *testing.T, path string) string {
-	url, err := url.JoinPath(c.Server.URL, path)
+	// The current implementation doesn't handle query parameters correctly
+	// url.JoinPath will escape query parameters, treating them as part of the path
+
+	// Split the path and query
+	pathParts := strings.SplitN(path, "?", 2)
+	basePath := pathParts[0]
+
+	baseURL, err := url.JoinPath(c.Server.URL, basePath)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return url
+
+	// If there's a query string, append it
+	if len(pathParts) > 1 {
+		return baseURL + "?" + pathParts[1]
+	}
+
+	return baseURL
 }
 
 func (c *TestHttpServer) MustDo(
@@ -58,9 +73,11 @@ func (c *TestHttpServer) MustDo(
 ) int {
 	// Encode request
 	var buf bytes.Buffer
-	err := json.NewEncoder(&buf).Encode(reqBody)
-	if err != nil {
-		t.Fatal(err)
+	if reqBody != nil {
+		err := json.NewEncoder(&buf).Encode(reqBody)
+		if err != nil {
+			t.Fatal(err)
+		}
 	}
 
 	// Prepare request
@@ -76,12 +93,24 @@ func (c *TestHttpServer) MustDo(
 	}
 	defer resp.Body.Close()
 
-	// Parse response body
+	// Read the entire response body
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Handle response body based on its type
 	if respBody != nil {
-		err = json.NewDecoder(resp.Body).Decode(&respBody)
-		if err != nil {
-			t.Logf("resp.Body: %s", resp.Body)
-			t.Fatalf("status: %d, err:%s", resp.StatusCode, err)
+		// If respBody is a string pointer, assign the body as is
+		if strPtr, ok := respBody.(*string); ok {
+			*strPtr = string(bodyBytes)
+		} else {
+			// Otherwise try to parse as JSON
+			err = json.Unmarshal(bodyBytes, respBody)
+			if err != nil {
+				t.Logf("resp.Body: %s", string(bodyBytes))
+				t.Fatalf("status: %d, err:%s", resp.StatusCode, err)
+			}
 		}
 	}
 

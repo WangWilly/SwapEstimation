@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/WangWilly/labs-hr-go/pkgs/utils"
+	"github.com/WangWilly/swap-estimation/pkgs/utils"
 	"github.com/ory/dockertest"
 	"github.com/ory/dockertest/docker"
 	"github.com/redis/go-redis/v9"

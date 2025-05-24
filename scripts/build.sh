@@ -1,6 +1,6 @@
 #/bin/bash
 
-IMG_NAME="labs-hr-go-app:latest"
+IMG_NAME="swap-estimation-app:latest"
 
 # Build docker image
 docker build -t $IMG_NAME .

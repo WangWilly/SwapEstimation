@@ -1,13 +1,11 @@
-# Makefile for labs-hr-go
+# Makefile for swap-estimation
 
 # Go parameters
-BINARY_NAME=labs-hr-go
+BINARY_NAME=swap-estimation
 MAIN_PATH=cmd/main.go
 BUILD_DIR=bin
-DOCKER_IMAGE_NAME=labs-hr-go-app
+DOCKER_IMAGE_NAME=swap-estimation-app
 DOCKER_TAG=latest
-MIGRATION_IMAGE_NAME=labs-hr-go-migration
-MIGRATION_TAG=latest
 
 # Go commands
 GOCMD=go
@@ -43,12 +41,6 @@ deps:
 docker:
 	./scripts/build.sh
 
-docker-migration:
-	./scripts/migration_build.sh
-
-local-db-setup:
-	./scripts/local_setup.sh
-
 # Help target
 help:
 	@echo "Make commands for $(BINARY_NAME):"
@@ -58,6 +50,4 @@ help:
 	@echo "  run/dev           - Run the development server"
 	@echo "  deps              - Download dependencies"
 	@echo "  docker            - Build Docker image for the app"
-	@echo "  docker-migration  - Build Docker image for migrations"
-	@echo "  local-db-setup    - Set up local database with Docker"
 	@echo "  all               - Run deps, test and build"
