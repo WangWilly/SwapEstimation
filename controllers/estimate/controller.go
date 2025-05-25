@@ -14,7 +14,8 @@ type Config struct {
 type Controller struct {
 	cfg Config
 
-	ethClient EthClient
+	ethClient    EthClient
+	ethWssClient EthWssClient
 
 	g4GetEstimate *singleflight.Group
 }
@@ -22,12 +23,14 @@ type Controller struct {
 func NewController(
 	cfg Config,
 	ethClient EthClient,
+	ethWssClient EthWssClient,
 ) *Controller {
 	g4GetEstimate := &singleflight.Group{}
 
 	return &Controller{
 		cfg:           cfg,
 		ethClient:     ethClient,
+		ethWssClient:  ethWssClient,
 		g4GetEstimate: g4GetEstimate,
 	}
 }

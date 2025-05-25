@@ -11,7 +11,8 @@ import (
 ////////////////////////////////////////////////////////////////////////////////
 
 type testSuite struct {
-	ethClient *MockEthClient
+	ethClient    *MockEthClient
+	ethWssClient *MockEthWssClient
 
 	controller *Controller
 	testServer testutils.TestHttpServer
@@ -22,17 +23,19 @@ func testInit(t *testing.T, test func(*testSuite)) {
 	defer ctrl.Finish()
 
 	ethClient := NewMockEthClient(ctrl)
+	ethWssClient := NewMockEthWssClient(ctrl)
 	cfg := Config{}
 	if err := envconfig.Process(t.Context(), &cfg); err != nil {
 		t.Fatal(err)
 	}
 
-	controller := NewController(cfg, ethClient)
+	controller := NewController(cfg, ethClient, ethWssClient)
 	testServer := testutils.NewTestHttpServer(controller)
 	suite := &testSuite{
-		ethClient:  ethClient,
-		controller: controller,
-		testServer: testServer,
+		ethClient:    ethClient,
+		ethWssClient: ethWssClient,
+		controller:   controller,
+		testServer:   testServer,
 	}
 
 	test(suite)

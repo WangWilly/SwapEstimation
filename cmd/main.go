@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -11,6 +10,7 @@ import (
 
 	"github.com/WangWilly/swap-estimation/controllers/estimate"
 	"github.com/WangWilly/swap-estimation/pkgs/clients/eth"
+	"github.com/WangWilly/swap-estimation/pkgs/clients/ethwss"
 	"github.com/WangWilly/swap-estimation/pkgs/middleware"
 	"github.com/WangWilly/swap-estimation/pkgs/utils"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -26,9 +26,11 @@ type envConfig struct {
 	Host string `env:"HOST,default=0.0.0.0"`
 
 	// Eth client configuration
-	GethClientURL string `env:"GETH_CLIENT_URL,required"`
+	GethClientURL    string `env:"GETH_CLIENT_URL,required"`
+	GethWssClientURL string `env:"GETH_WSS_CLIENT_URL,required"`
 
-	EthClientCfg eth.Config `env:",prefix=ETH_CLIENT_"`
+	EthClientCfg    eth.Config    `env:",prefix=ETH_CLIENT_"`
+	EthWssClientCfg ethwss.Config `env:",prefix=ETH_WSS_CLIENT_"`
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -60,9 +62,15 @@ func main() {
 
 	gethClient, err := ethclient.Dial(cfg.GethClientURL)
 	if err != nil {
-		log.Fatalf("Failed to connect to the Ethereum client: %v", err)
+		logger.Fatal().Err(err).Msg("Failed to connect to Ethereum node")
 	}
 	ethClient := eth.New(cfg.EthClientCfg, gethClient)
+
+	gethWssClient, err := ethclient.Dial(cfg.GethWssClientURL)
+	if err != nil {
+		logger.Fatal().Err(err).Msg("Failed to connect to Ethereum WSS node")
+	}
+	ethWssClient := ethwss.New(cfg.EthWssClientCfg, gethWssClient)
 
 	////////////////////////////////////////////////////////////////////////////
 	// Initialize the controllers
@@ -71,6 +79,7 @@ func main() {
 	estimateCtrl := estimate.NewController(
 		estimateCtrlCfg,
 		ethClient,
+		ethWssClient,
 	)
 	estimateCtrl.RegisterRoutes(r)
 
@@ -104,6 +113,10 @@ func main() {
 	// Create a deadline to wait for
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
+
+	// Close the Ethereum client connection
+	gethClient.Close()
+	gethWssClient.Close()
 
 	// Gracefully shutdown the server
 	logger.Info().Msg("Shutting down server...")

@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/WangWilly/swap-estimation/pkgs/clients/eth"
+	"github.com/WangWilly/swap-estimation/pkgs/clients/ethwss"
 	. "github.com/smartystreets/goconvey/convey"
 	"go.uber.org/mock/gomock"
 )
@@ -28,13 +29,23 @@ func TestGet(t *testing.T) {
 			}
 			mockReservePair.Reserve1.SetString("100000000000000000000", 10) // 100 ETH in wei
 
+			mockEthWssReservePair := (*ethwss.ReservePair)(mockReservePair)
+
 			expectedOutput := "1974316068"
 
 			Convey("When making a valid estimation request", func() {
-				// Set up expectations for the eth client call
+				// Set up expectations for the cache miss and eth client call
+				s.ethWssClient.EXPECT().
+					GetPair(gomock.Any(), validPoolAddr).
+					Return(nil) // Cache miss
+
 				s.ethClient.EXPECT().
 					UniV2ReservePair(gomock.Any(), validPoolAddr).
 					Return(mockReservePair, nil)
+
+				s.ethWssClient.EXPECT().
+					RegPair(gomock.Any(), validPoolAddr, gomock.Any()).
+					Return(nil)
 
 				// Make the request and verify response
 				var actualOutput string
@@ -50,6 +61,34 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should be successful with the estimated amount", func() {
+					So(resCode, ShouldEqual, http.StatusOK)
+					So(actualOutput, ShouldEqual, expectedOutput)
+				})
+			})
+
+			Convey("When making a request with cached pool data", func() {
+				// Set up expectation for cache hit
+				s.ethWssClient.EXPECT().
+					GetPair(gomock.Any(), validPoolAddr).
+					Return(mockEthWssReservePair) // Cache hit
+
+				// No call to ethClient.UniV2ReservePair expected
+				// No call to ethWssClient.RegPair expected
+
+				// Make the request and verify response
+				var actualOutput string
+				resCode := s.testServer.MustDo(
+					t,
+					http.MethodGet,
+					"/estimate?pool="+validPoolAddr+
+						"&src="+validSrcAddr+
+						"&dst="+validDstAddr+
+						"&src_amount="+validAmount,
+					nil,
+					&actualOutput,
+				)
+
+				Convey("Then the response should be successful with the estimated amount from cache", func() {
 					So(resCode, ShouldEqual, http.StatusOK)
 					So(actualOutput, ShouldEqual, expectedOutput)
 				})
@@ -235,6 +274,11 @@ func TestGet(t *testing.T) {
 			})
 
 			Convey("When the eth client fails to retrieve reserves", func() {
+				// Set up expectations for the cache miss and eth client failure
+				s.ethWssClient.EXPECT().
+					GetPair(gomock.Any(), validPoolAddr).
+					Return(nil) // Cache miss
+
 				// Set up expectation for eth client failure
 				s.ethClient.EXPECT().
 					UniV2ReservePair(gomock.Any(), validPoolAddr).
@@ -254,11 +298,17 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should indicate failure to estimate output amount", func() {
-					So(errorResponse["error"], ShouldEqual, "failed to estimate output amount")
+					So(errorResponse["error"], ShouldEqual, "failed to get reserve pair")
 				})
 			})
 
 			Convey("When multiple concurrent requests are made for the same pool", func() {
+				// First request will be a cache miss
+				s.ethWssClient.EXPECT().
+					GetPair(gomock.Any(), validPoolAddr).
+					Return(nil).
+					Times(5) // First request is a cache miss
+
 				// Set up expectation for the eth client call - should only be called ONCE
 				s.ethClient.EXPECT().
 					UniV2ReservePair(gomock.Any(), validPoolAddr).
@@ -267,6 +317,12 @@ func TestGet(t *testing.T) {
 						time.Sleep(100 * time.Millisecond)
 						return mockReservePair, nil
 					}).Times(1) // This is key - we expect only one call
+
+				// Register the pair in cache
+				s.ethWssClient.EXPECT().
+					RegPair(gomock.Any(), validPoolAddr, gomock.Any()).
+					Return(nil).
+					Times(5) // Should only be called once after the first request
 
 				// Number of concurrent requests to simulate
 				concurrentRequests := 5

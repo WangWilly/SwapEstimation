@@ -14,6 +14,7 @@ import (
 	reflect "reflect"
 
 	eth "github.com/WangWilly/swap-estimation/pkgs/clients/eth"
+	ethwss "github.com/WangWilly/swap-estimation/pkgs/clients/ethwss"
 	gomock "go.uber.org/mock/gomock"
 )
 
@@ -54,4 +55,56 @@ func (m *MockEthClient) UniV2ReservePair(ctx context.Context, pairAddrStr string
 func (mr *MockEthClientMockRecorder) UniV2ReservePair(ctx, pairAddrStr any) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "UniV2ReservePair", reflect.TypeOf((*MockEthClient)(nil).UniV2ReservePair), ctx, pairAddrStr)
+}
+
+// MockEthWssClient is a mock of EthWssClient interface.
+type MockEthWssClient struct {
+	ctrl     *gomock.Controller
+	recorder *MockEthWssClientMockRecorder
+	isgomock struct{}
+}
+
+// MockEthWssClientMockRecorder is the mock recorder for MockEthWssClient.
+type MockEthWssClientMockRecorder struct {
+	mock *MockEthWssClient
+}
+
+// NewMockEthWssClient creates a new mock instance.
+func NewMockEthWssClient(ctrl *gomock.Controller) *MockEthWssClient {
+	mock := &MockEthWssClient{ctrl: ctrl}
+	mock.recorder = &MockEthWssClientMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockEthWssClient) EXPECT() *MockEthWssClientMockRecorder {
+	return m.recorder
+}
+
+// GetPair mocks base method.
+func (m *MockEthWssClient) GetPair(ctx context.Context, address string) *ethwss.ReservePair {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "GetPair", ctx, address)
+	ret0, _ := ret[0].(*ethwss.ReservePair)
+	return ret0
+}
+
+// GetPair indicates an expected call of GetPair.
+func (mr *MockEthWssClientMockRecorder) GetPair(ctx, address any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "GetPair", reflect.TypeOf((*MockEthWssClient)(nil).GetPair), ctx, address)
+}
+
+// RegPair mocks base method.
+func (m *MockEthWssClient) RegPair(ctx context.Context, address string, initPair *ethwss.ReservePair) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "RegPair", ctx, address, initPair)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// RegPair indicates an expected call of RegPair.
+func (mr *MockEthWssClientMockRecorder) RegPair(ctx, address, initPair any) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "RegPair", reflect.TypeOf((*MockEthWssClient)(nil).RegPair), ctx, address, initPair)
 }
