@@ -103,3 +103,4 @@ When using Docker Compose, configure these variables in the `deployments/docker-
 - https://github.com/uber-go/mock
 - https://github.com/rs/zerolog?tab=readme-ov-file#benchmarks
 - https://github.com/uber-go/zap
+- https://github.com/Uniswap/v2-sdk/blob/main/src/entities/pair.ts#L184
