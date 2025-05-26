@@ -14,64 +14,54 @@ import (
 
 ////////////////////////////////////////////////////////////////////////////////
 
+type GetQuery struct {
+	PoolAddr      string `form:"pool" binding:"required"`
+	SrcTokenAddr  string `form:"src" binding:"required"`
+	DestTokenAddr string `form:"dst" binding:"required"`
+	SrcAmountStr  string `form:"src_amount" binding:"required"`
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
 func (c *Controller) Get(ctx *gin.Context) {
 	logger := log.Ctx(ctx.Request.Context())
 	logger.Debug().Msg("Received estimate request")
 
-	poolAddr, ok := ctx.GetQuery("pool")
-	if !ok || poolAddr == "" {
-		logger.Error().Msg("Pool address is required")
-		ctx.JSON(400, gin.H{"error": "pool address is required"})
+	q := &GetQuery{}
+	if err := ctx.ShouldBindQuery(q); err != nil {
+		logger.Error().
+			Err(err).
+			Msg("Failed to bind query parameters")
+		ctx.JSON(400, gin.H{"error": "invalid query parameters"})
 		return
 	}
-	ok = ctrlutils.IsValidAddr(poolAddr)
-	if !ok {
+
+	if ok := ctrlutils.IsValidAddr(q.PoolAddr); !ok {
 		logger.Error().Msg("Invalid pool address format")
 		ctx.JSON(400, gin.H{"error": "invalid pool address format"})
 		return
 	}
 
-	srcTokenAddr, ok := ctx.GetQuery("src")
-	if !ok || srcTokenAddr == "" {
-		logger.Error().Msg("Source token address is required")
-		ctx.JSON(400, gin.H{"error": "source token address is required"})
-		return
-	}
-	ok = ctrlutils.IsValidAddr(srcTokenAddr)
-	if !ok {
+	if ok := ctrlutils.IsValidAddr(q.SrcTokenAddr); !ok {
 		logger.Error().Msg("Invalid source token address format")
 		ctx.JSON(400, gin.H{"error": "invalid source token address format"})
 		return
 	}
 
-	destTokenAddr, ok := ctx.GetQuery("dst")
-	if !ok || destTokenAddr == "" {
-		logger.Error().Msg("Destination token address is required")
-		ctx.JSON(400, gin.H{"error": "destination token address is required"})
-		return
-	}
-	ok = ctrlutils.IsValidAddr(destTokenAddr)
-	if !ok {
+	if ok := ctrlutils.IsValidAddr(q.DestTokenAddr); !ok {
 		logger.Error().Msg("Invalid destination token address format")
 		ctx.JSON(400, gin.H{"error": "invalid destination token address format"})
 		return
 	}
 
-	ok = ctrlutils.IsValidUniV2PairAddr(srcTokenAddr, destTokenAddr, poolAddr)
-	if !ok {
+	if ok := ctrlutils.IsValidUniV2PairAddr(q.SrcTokenAddr, q.DestTokenAddr, q.PoolAddr); !ok {
 		logger.Error().Msg("Invalid Uniswap V2 pair address")
 		ctx.JSON(400, gin.H{"error": "invalid Uniswap V2 pair address"})
 		return
 	}
 
-	srcAmountStr, ok := ctx.GetQuery("src_amount")
-	if !ok || srcAmountStr == "" {
-		logger.Error().Msg("Source amount is required")
-		ctx.JSON(400, gin.H{"error": "source amount is required"})
-		return
-	}
 	srcAmount := new(big.Int)
-	srcAmount, ok = srcAmount.SetString(srcAmountStr, 10)
+	srcAmount, ok := srcAmount.SetString(q.SrcAmountStr, 10)
 	if !ok {
 		logger.Error().Msg("Invalid source amount")
 		ctx.JSON(400, gin.H{"error": "invalid source amount"})
@@ -81,19 +71,19 @@ func (c *Controller) Get(ctx *gin.Context) {
 	////////////////////////////////////////////////////////////////////////////
 
 	// Get the reserve pair from cache or fetch it
-	reservePair, err := c.getPair(ctx.Request.Context(), poolAddr)
+	reservePair, err := c.getPair(ctx.Request.Context(), q.PoolAddr)
 	if err != nil {
 		logger.Error().
 			Err(err).
-			Str("pool_address", poolAddr).
+			Str("pool_address", q.PoolAddr).
 			Msg("Failed to get Uniswap V2 reserve pair")
 		ctx.JSON(500, gin.H{"error": "failed to get reserve pair"})
 		return
 	}
 
 	estimatedAmount := ctrlutils.CalOutAmount(
-		srcTokenAddr,
-		destTokenAddr,
+		q.SrcTokenAddr,
+		q.DestTokenAddr,
 		srcAmount,
 		reservePair.Reserve0,
 		reservePair.Reserve1,

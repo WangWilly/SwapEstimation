@@ -109,7 +109,7 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should indicate pool address is required", func() {
-					So(errorResponse["error"], ShouldEqual, "pool address is required")
+					So(errorResponse["error"], ShouldEqual, "invalid query parameters")
 				})
 			})
 
@@ -148,7 +148,7 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should indicate source token address is required", func() {
-					So(errorResponse["error"], ShouldEqual, "source token address is required")
+					So(errorResponse["error"], ShouldEqual, "invalid query parameters")
 				})
 			})
 
@@ -187,7 +187,7 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should indicate destination token address is required", func() {
-					So(errorResponse["error"], ShouldEqual, "destination token address is required")
+					So(errorResponse["error"], ShouldEqual, "invalid query parameters")
 				})
 			})
 
@@ -248,7 +248,7 @@ func TestGet(t *testing.T) {
 				)
 
 				Convey("Then the response should indicate source amount is required", func() {
-					So(errorResponse["error"], ShouldEqual, "source amount is required")
+					So(errorResponse["error"], ShouldEqual, "invalid query parameters")
 				})
 			})
 

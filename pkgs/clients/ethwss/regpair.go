@@ -42,10 +42,11 @@ func (c *client) RegPair(ctx context.Context, address string, initPair *ReserveP
 		c.addressLock.Unlock()
 	}()
 
+	////////////////////////////////////////////////////////////////////////////
+
 	logger.Debug().
 		Str("pair_address", address).
 		Msg("Registering Uniswap V2 pair for reserve updates")
-
 	if _, ok := c.reservePairCacheMap[address]; ok {
 		logger.Warn().
 			Str("pair_address", address).

@@ -8,6 +8,9 @@
 - [API Documentation](#api-documentation)
 - [All Environment Variables](#all-environment-variables)
   - [Server Configuration](#server-configuration)
+  - [Ethereum Connection](#ethereum-connection)
+  - [Ethereum Client Configuration](#ethereum-client-configuration)
+  - [Ethereum WebSocket Client Configuration](#ethereum-websocket-client-configuration)
 - [Development Resources](#development-resources)
 
 ## Installation
@@ -91,10 +94,40 @@ Error Responses:
 | PORT | The port on which the service listens | `8080` |
 | HOST | The host address for the service | `0.0.0.0` |
 
+### Ethereum Connection
+| Name | Description | Default |
+|------|-------------|---------|
+| GETH_CLIENT_URL | Ethereum HTTP client URL | Required |
+| GETH_WSS_CLIENT_URL | Ethereum WebSocket client URL | Required |
+
+### Ethereum Client Configuration
+| Name | Description | Default |
+|------|-------------|---------|
+| ETH_CLIENT_BLOCK_RANGE_SIZE | Maximum size of block range for querying | `9900` |
+
+### Ethereum WebSocket Client Configuration
+| Name | Description | Default |
+|------|-------------|---------|
+| ETH_WSS_CLIENT_LISTEN_PAIR_PERIOD | Period to refresh pair data | `2m` |
+
 ### Usage Examples
 
 #### Docker Environment
-When using Docker Compose, configure these variables in the `deployments/docker-compose.yml` file.
+When using Docker Compose, configure these variables in the `deployments/docker-compose.yml` file:
+
+```yaml
+version: '3'
+services:
+  backend:
+    image: swap-estimation-app:latest
+    environment:
+      PORT: 8080
+      HOST: 0.0.0.0
+      GETH_CLIENT_URL: https://mainnet.infura.io/v3/your-project-id
+      GETH_WSS_CLIENT_URL: wss://mainnet.infura.io/ws/v3/your-project-id
+      ETH_CLIENT_BLOCK_RANGE_SIZE: 9900
+      ETH_WSS_CLIENT_LISTEN_PAIR_PERIOD: 2m
+```
 
 ## Development Resources
 
